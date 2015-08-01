@@ -1,14 +1,26 @@
 require 'spec_helper'
 
 describe 'minecraft attributes' do
-  let(:chef_run) do
-    ChefSpec::Runner.new(:platform => 'debian', :version  => '7.0') do |node|
-      node.automatic['memory']['total'] = '2097152kB'
-    end.converge('minecraft::default')
-  end
   let(:minecraft) { chef_run.node['minecraft'] }
 
+  describe 'on an ubuntu system' do
+    let(:chef_run) do
+      ChefSpec::Runner.new(:platform => 'ubuntu', :version  => '12.04') do |node|
+        node.automatic['memory']['total'] = '2097152kB'
+      end.converge('minecraft::default')
+    end
+
+    it 'sets default init_style to be upstart' do
+      expect(minecraft['init_style']).to eq('upstart')
+    end
+  end
+
   describe 'on an debian system' do
+    let(:chef_run) do
+      ChefSpec::Runner.new(:platform => 'debian', :version  => '7.0') do |node|
+        node.automatic['memory']['total'] = '2097152kB'
+      end.converge('minecraft::default')
+    end
     it 'sets the default user & group' do
       expect(minecraft['user']).to eq('mcserver')
       expect(minecraft['group']).to eq('mcserver')

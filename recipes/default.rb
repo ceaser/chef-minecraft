@@ -19,22 +19,6 @@
 include_recipe "java::#{node['java']['install_flavor']}"
 include_recipe 'minecraft::user'
 
-case node['minecraft']['init_style']
-when 'runit'
-  include_recipe 'runit'
-when 'upstart'
-  service "minecraft" do
-    action :nothing
-  end
-
-  template '/etc/init/minecraft.conf' do
-    source 'init_minecraft.erb'
-    owner 'root'
-    group 'root'
-    mode '0644'
-    notifies :restart, 'service[minecraft]', :delayed if node['minecraft']['autorestart']
-  end
-end
 
 jar_name = minecraft_file(node['minecraft']['url'])
 
@@ -55,7 +39,6 @@ remote_file "#{node['minecraft']['install_dir']}/#{jar_name}" do
   action :create_if_missing
 end
 
-include_recipe 'minecraft::service'
 include_recipe "minecraft::#{node['minecraft']['install_type']}"
 
 template "#{node['minecraft']['install_dir']}/server.properties" do
@@ -98,6 +81,26 @@ file "#{node['minecraft']['install_dir']}/eula.txt" do
   when 'upstart'
     notifies :restart, 'service[minecraft]', :delayed if node['minecraft']['autorestart']
   end
+end
+
+case node['minecraft']['init_style']
+when 'runit'
+  include_recipe 'runit'
+  include_recipe 'minecraft::service'
+end
+
+service "minecraft" do
+  action :nothing
+  only_if { node['minecraft']['init_style'] == 'upstart' }
+end
+
+template '/etc/init/minecraft.conf' do
+  source 'init_minecraft.erb'
+  owner 'root'
+  group 'root'
+  mode 0644
+  notifies :restart, 'service[minecraft]', :delayed if node['minecraft']['autorestart']
+only_if { node['minecraft']['init_style'] == 'upstart' }
 end
 
 service "minecraft" do

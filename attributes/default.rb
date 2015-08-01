@@ -49,11 +49,7 @@ default['minecraft']['xmx']                 = "#{(node['memory']['total'].to_i *
 default['minecraft']['java-options']        = ''
 case node['platform']
 when 'ubuntu'
-  if node["platform_version"].to_f >= 9.10
-    default['minecraft']['init_style']          = 'upstart'
-  else
-    default['minecraft']['init_style']          = 'runit'
-  end
+  default['minecraft']['init_style']          = 'upstart'
 else
   default['minecraft']['init_style']          = 'runit'
 end

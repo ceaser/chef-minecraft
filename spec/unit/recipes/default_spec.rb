@@ -53,7 +53,16 @@ describe 'minecraft::default' do
       it 'has 0644 permissions' do
         expect(template.mode).to eq(0644)
       end
+
+      it 'notifies runit service' do
+        expect(template).to notify('runit_service[minecraft]').to(:restart).delayed
+      end
+
+      it 'does not notify upstart service' do
+        expect(template).to_not notify('service[minecraft]').to(:restart).delayed
+      end
     end
+
 
     context 'creates ops.txt' do
       let(:ops) { chef_run.file('/srv/minecraft/ops.txt') }
@@ -69,6 +78,14 @@ describe 'minecraft::default' do
 
       it 'has 0644 permissions' do
         expect(ops.mode).to eq(0644)
+      end
+
+      it 'notifies runit service' do
+        expect(ops).to notify('runit_service[minecraft]').to(:restart).delayed
+      end
+
+      it 'does not notify upstart service' do
+        expect(ops).to_not notify('service[minecraft]').to(:restart).delayed
       end
     end
 
@@ -87,6 +104,14 @@ describe 'minecraft::default' do
       it 'has 0644 permissions' do
         expect(banned_ips.mode).to eq(0644)
       end
+
+      it 'notifies runit service' do
+        expect(banned_ips).to notify('runit_service[minecraft]').to(:restart).delayed
+      end
+
+      it 'does not notify upstart service' do
+        expect(banned_ips).to_not notify('service[minecraft]').to(:restart).delayed
+      end
     end
 
     context 'creates banned-players.txt' do
@@ -103,6 +128,14 @@ describe 'minecraft::default' do
 
       it 'has 0644 permissions' do
         expect(banned_players.mode).to eq(0644)
+      end
+
+      it 'notifies runit service' do
+        expect(banned_players).to notify('runit_service[minecraft]').to(:restart).delayed
+      end
+
+      it 'does not notify upstart service' do
+        expect(banned_players).to_not notify('service[minecraft]').to(:restart).delayed
       end
     end
 
@@ -121,11 +154,79 @@ describe 'minecraft::default' do
       it 'has 0644 permissions' do
         expect(white_list.mode).to eq(0644)
       end
+
+      it 'notifies runit service' do
+        expect(white_list).to notify('runit_service[minecraft]').to(:restart).delayed
+      end
+
+      it 'does not notify upstart service' do
+        expect(white_list).to_not notify('service[minecraft]').to(:restart).delayed
+      end
+    end
+
+    context 'creates white-list.txt' do
+      let(:eula) { chef_run.file('/srv/minecraft/eula.txt') }
+
+      it 'creates eula.txt' do
+        expect(chef_run).to create_file(eula.path).with_content(/^eula=/)
+      end
+
+      it 'has 0644 permissions' do
+        expect(eula.mode).to eq(0644)
+      end
+
+      it 'notifies runit service' do
+        expect(eula).to notify('runit_service[minecraft]').to(:restart).delayed
+      end
+
+      it 'does not notify upstart service' do
+        expect(eula).to_not notify('service[minecraft]').to(:restart).delayed
+      end
     end
 
     it 'includes the minecraft::service recipe' do
       expect(chef_run).to include_recipe('minecraft::service')
       expect(chef_run).to include_recipe('runit')
+    end
+  end
+
+  describe "on an ubuntu system" do
+    let(:chef_run) do
+      ChefSpec::Runner.new(:platform => 'ubuntu', :version  => '12.04') do |node|
+        node.automatic['minecraft']['init_type'] = 'upstart'
+        node.automatic['memory']['total'] = '2097152kB'
+      end.converge(described_recipe)
+    end
+
+    it 'does not include the minecraft::service recipe' do
+      expect(chef_run).to_not include_recipe('minecraft::service')
+      expect(chef_run).to_not include_recipe('runit')
+    end
+
+    context 'creates the /etc/init/minecraft.conf' do
+      let(:template) { chef_run.template('/etc/init/minecraft.conf') }
+
+      it 'creates upstart file' do
+        expect(chef_run).to render_file(template.path)
+      end
+
+      it 'is owned by root:root' do
+        expect(template.owner).to eq('root')
+        expect(template.group).to eq('root')
+      end
+
+      it 'has 0644 permissions' do
+        expect(template.mode).to eq(0644)
+      end
+
+      it 'notify service[minecraft]' do
+        resource = chef_run.service('minecraft')
+        expect(template).to notify('service[minecraft]').to(:restart).delayed
+      end
+
+      it 'does not notify runit service' do
+        expect(template).to_not notify('runit_service[minecraft]').to(:restart).delayed
+      end
     end
   end
 end
