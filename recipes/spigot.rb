@@ -24,5 +24,10 @@ template "#{node['minecraft']['install_dir']}/spigot.yml" do
   group node['minecraft']['group']
   mode 0644
   action :create
-  notifies :restart, 'runit_service[minecraft]', :delayed if node['minecraft']['autorestart']
+  case node['minecraft']['init_style']
+  when 'runit'
+    notifies :restart, 'runit_service[minecraft]', :delayed if node['minecraft']['autorestart']
+  when 'upstart'
+    notifies :restart, 'service[minecraft]', :delayed if node['minecraft']['autorestart']
+  end
 end

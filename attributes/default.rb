@@ -47,7 +47,16 @@ default['minecraft']['xmx']                 = "#{(node['memory']['total'].to_i *
 
 # Additional options to be passed to java, for runit only
 default['minecraft']['java-options']        = ''
-default['minecraft']['init_style']          = 'runit'
+case node['platform']
+when 'ubuntu'
+  if node["platform_version"].to_f >= 9.10
+    default['minecraft']['init_style']          = 'upstart'
+  else
+    default['minecraft']['init_style']          = 'runit'
+  end
+else
+  default['minecraft']['init_style']          = 'runit'
+end
 
 default['minecraft']['ops']                 = []
 default['minecraft']['banned-ips']          = []
