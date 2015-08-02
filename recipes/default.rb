@@ -89,11 +89,6 @@ when 'runit'
   include_recipe 'minecraft::service'
 end
 
-service "minecraft" do
-  action :nothing
-  only_if { node['minecraft']['init_style'] == 'upstart' }
-end
-
 template '/etc/init/minecraft.conf' do
   source 'init_minecraft.erb'
   owner 'root'
